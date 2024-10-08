@@ -43,12 +43,26 @@ def extract_ml_learning_path(url) -> list[dict]:
 
     return data
 
-# Main function with minimal logic
+# Main function with error-proof logic
 
 
 def main(url=None):
-    url = url or CONFIG.GCSB_JOURNEY_URL  # Use provided URL or default from CONFIG
-    data = extract_ml_learning_path(url)
+    # Check if a URL is provided or exists in CONFIG; otherwise prompt for input
+    if url:
+        GCSB_JOURNEY_URL = url
+    elif hasattr(CONFIG, "GCSB_JOURNEY_URL") and CONFIG.GCSB_JOURNEY_URL:
+        GCSB_JOURNEY_URL = CONFIG.GCSB_JOURNEY_URL
+    else:
+        # Fallback to user input
+        GCSB_JOURNEY_URL = input("Please enter the GCSB Journey URL: ")
+
+    # Ensure the URL isn't empty
+    if not GCSB_JOURNEY_URL:
+        raise ValueError(
+            "No GCSB_JOURNEY_URL provided, and none is available in CONFIG or user input!")
+
+    # Proceed with scraping
+    data = extract_ml_learning_path(GCSB_JOURNEY_URL)
 
     if data:
         csv_file = DATA_FOLDER / f"{COURSE_CODE}-Courses.csv"
@@ -64,4 +78,4 @@ def main(url=None):
 
 # If run directly
 if __name__ == "__main__":
-    main()  # Uses default CONFIG.GCSB_JOURNEY_URL or pass a custom URL
+    main()  # Use default CONFIG.GCSB_JOURNEY_URL or prompt for user input
