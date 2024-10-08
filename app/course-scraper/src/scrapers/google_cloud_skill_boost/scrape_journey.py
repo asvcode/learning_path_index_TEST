@@ -1,20 +1,21 @@
-from csv import DictWriter
+from scrapers.google_cloud_skill_boost import pages
+from config import CONFIG  # Import CONFIG after modifying the path
+import sys
 from pathlib import Path
+from csv import DictWriter
 from urllib.parse import urljoin
 from lxml import etree
+import requests
 import argparse
 import os
-import requests
 
-# Import CONFIG from a separate file
-from config import CONFIG
-from scrapers.google_cloud_skill_boost import pages
+# Dynamically add the parent directory to the Python path for both environments
+src_path = Path(__file__).resolve().parent.parent
+sys.path.append(str(src_path))
+
 
 COURSE_CODE = "CLMML11"
-GCSB_JOURNEY_URL = "https://www.cloudskillsboost.google/journeys/17"
 GCSB_HOME_URL = "https://www.cloudskillsboost.google/"
-GCSB_LOGIN_URL = "https://www.cloudskillsboost.google/users/sign_in"
-
 DATA_FOLDER = Path(CONFIG.DATA_PATH, COURSE_CODE)
 DATA_FOLDER.mkdir(exist_ok=True, parents=True)
 
