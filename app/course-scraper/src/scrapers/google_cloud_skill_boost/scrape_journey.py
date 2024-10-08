@@ -1,5 +1,5 @@
-from scrapers.google_cloud_skill_boost import pages
-from config import CONFIG  # Import CONFIG after modifying the path
+from scrapers.google_cloud_skill_boost import pages  # Now Python can find scrapers
+from config import CONFIG  # Now Python can find config.py
 import sys
 from pathlib import Path
 from csv import DictWriter
@@ -9,7 +9,7 @@ import requests
 import argparse
 import os
 
-# Dynamically add the parent directory to the Python path for both environments
+# Dynamically add the parent directory (src) to the Python path
 src_path = Path(__file__).resolve().parent.parent
 sys.path.append(str(src_path))
 
