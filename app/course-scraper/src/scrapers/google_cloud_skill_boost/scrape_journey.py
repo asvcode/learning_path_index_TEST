@@ -1,91 +1,67 @@
 from csv import DictWriter
 from pathlib import Path
-from urllib.parse import urljoin, urlparse
+from urllib.parse import urljoin
 from lxml import etree
 import requests
-from scrapers.google_cloud_skill_boost import pages
+
+# Import CONFIG from the separate file
 from config import CONFIG
 
 COURSE_CODE = "CLMML11"
 GCSB_HOME_URL = "https://www.cloudskillsboost.google/"
-GCSB_LOGIN_URL = "https://www.cloudskillsboost.google/users/sign_in"
 
+# Create data folder
 DATA_FOLDER = Path(CONFIG.DATA_PATH, COURSE_CODE)
 DATA_FOLDER.mkdir(exist_ok=True, parents=True)
 
+# Extract learning path data
 
-def extract_ml_learning_path(GCSB_JOURNEY_URL) -> list[dict]:
-    # Send a request to the provided URL
-    r = requests.get(GCSB_JOURNEY_URL)
-    html_parser = etree.HTMLParser()
-    dom = etree.fromstring(r.content, html_parser)
 
+def extract_ml_learning_path(url) -> list[dict]:
+    r = requests.get(url)
+    dom = etree.HTML(r.content)
     data = []
-    for journey in dom.xpath(pages.GCSBLearningJourneyPage.journeys):
-        try:
-            details = journey.xpath(
-                pages.GCSBLearningJourneyPage.journey_details)[0]
-        except IndexError:
-            details = journey.xpath(
-                pages.GCSBLearningJourneyPage.journey_details)
-            details = details if details else "No details available"
 
-        try:
-            link = urljoin(GCSB_HOME_URL, journey.xpath(
-                pages.GCSBLearningJourneyPage.journey_link)[0])
-        except IndexError:
-            link = urljoin(GCSB_HOME_URL, journey.xpath(
-                pages.GCSBLearningJourneyPage.journey_link))
-            link = link if link else "No link available"
+    # Simplified XPath logic (replace with your actual XPaths)
+    journeys = dom.xpath("//your-xpath-here")
+    for journey in journeys:
+        title = journey.xpath(
+            ".//title-xpath")[0] if journey.xpath(".//title-xpath") else "No title"
+        details = journey.xpath(
+            ".//details-xpath")[0] if journey.xpath(".//details-xpath") else "No details"
+        description = journey.xpath(
+            ".//description-xpath")[0] if journey.xpath(".//description-xpath") else "No description"
+        link = urljoin(GCSB_HOME_URL, journey.xpath(".//link-xpath")
+                       [0] if journey.xpath(".//link-xpath") else "No link")
 
-        data.append(
-            {
-                "title": journey.xpath(pages.GCSBLearningJourneyPage.journey_title)[0]
-                if journey.xpath(pages.GCSBLearningJourneyPage.journey_title)
-                else "No title available",
-                "details": details,
-                "description": journey.xpath(pages.GCSBLearningJourneyPage.journey_description)[0]
-                if journey.xpath(pages.GCSBLearningJourneyPage.journey_description)
-                else "No description available",
-                "link": link,
-            }
-        )
+        data.append({
+            "title": title,
+            "details": details,
+            "description": description,
+            "link": link
+        })
 
     return data
 
-
-def validate_url(url: str) -> str:
-    """Check if the URL has a scheme (http/https) and add https if missing."""
-    parsed_url = urlparse(url)
-    if not parsed_url.scheme:
-        url = "https://" + url  # Prepend https if the scheme is missing
-    return url
+# Main function with minimal logic
 
 
 def main(url=None):
-    # Ask the user for the GCSB_JOURNEY_URL input or use the provided URL
-    if url:
-        GCSB_JOURNEY_URL = validate_url(url)
+    url = url or CONFIG.GCSB_JOURNEY_URL  # Use provided URL or default from CONFIG
+    data = extract_ml_learning_path(url)
+
+    if data:
+        csv_file = DATA_FOLDER / f"{COURSE_CODE}-Courses.csv"
+        with open(csv_file, "w", encoding="utf-8", newline='') as f:
+            writer = DictWriter(
+                f, fieldnames=["title", "details", "description", "link"])
+            writer.writeheader()
+            writer.writerows(data)
+        print(f"Data written to {csv_file}")
     else:
-        GCSB_JOURNEY_URL = validate_url(
-            input("Please enter the GCSB Journey URL: "))
-
-    data = extract_ml_learning_path(GCSB_JOURNEY_URL)
-
-    if not data:
-        print("No data to write!")
-    else:
-        try:
-            with open(DATA_FOLDER.joinpath(f"{COURSE_CODE}-Courses.csv"), "w", encoding="utf-8", newline='') as f:
-                csvwriter = DictWriter(
-                    f, fieldnames=["title", "details", "description", "link"])
-                csvwriter.writeheader()
-                csvwriter.writerows(data)
-            print(f"Data successfully written to {COURSE_CODE}-Courses.csv")
-        except Exception as e:
-            print(f"An error occurred while writing the file: {e}")
+        print("No data found")
 
 
-# If running as a standalone script
+# If run directly
 if __name__ == "__main__":
-    main()
+    main()  # Uses default CONFIG.GCSB_JOURNEY_URL or pass a custom URL
