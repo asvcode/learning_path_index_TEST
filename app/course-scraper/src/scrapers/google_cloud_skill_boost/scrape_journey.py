@@ -2,10 +2,10 @@ from csv import DictWriter
 from pathlib import Path
 from urllib.parse import urljoin
 from lxml import etree
+import requests
 
 from scrapers.google_cloud_skill_boost import pages
 from config import CONFIG
-import requests
 
 COURSE_CODE = "CLMML11"
 GCSB_JOURNEY_URL = "https://www.cloudskillsboost.google/journeys/17"
@@ -27,18 +27,22 @@ def extract_ml_learning_path(GCSB_JOURNEY_URL) -> list[dict]:
     for journey in dom.xpath(pages.GCSBLearningJourneyPage.journeys):
         try:
             # Try to extract the first element from journey details
-            details = journey.xpath(pages.GCSBLearningJourneyPage.journey_details)[0]
+            details = journey.xpath(
+                pages.GCSBLearningJourneyPage.journey_details)[0]
         except IndexError:
             # If the first element is not available, use the full result or provide a default value
-            details = journey.xpath(pages.GCSBLearningJourneyPage.journey_details)
+            details = journey.xpath(
+                pages.GCSBLearningJourneyPage.journey_details)
             details = details if details else "No details available"
 
         try:
             # Try to extract the first link and construct the full URL
-            link = urljoin(GCSB_HOME_URL, journey.xpath(pages.GCSBLearningJourneyPage.journey_link)[0])
+            link = urljoin(GCSB_HOME_URL, journey.xpath(
+                pages.GCSBLearningJourneyPage.journey_link)[0])
         except IndexError:
             # If the link is missing, handle it gracefully
-            link = urljoin(GCSB_HOME_URL, journey.xpath(pages.GCSBLearningJourneyPage.journey_link))
+            link = urljoin(GCSB_HOME_URL, journey.xpath(
+                pages.GCSBLearningJourneyPage.journey_link))
             link = link if link else "No link available"
 
         # Append the extracted information to the data list
@@ -53,21 +57,28 @@ def extract_ml_learning_path(GCSB_JOURNEY_URL) -> list[dict]:
 
     return data
 
-if __name__ == "__main__":
+
+def main():
     # Ask the user for the GCSB_JOURNEY_URL input
     GCSB_JOURNEY_URL = input("Please enter the GCSB Journey URL: ")
     data = extract_ml_learning_path(GCSB_JOURNEY_URL)
 
-# Check if data is not empty
-if not data:
-    print("No data to write!")
-else:
-    try:
-        # Writing to the CSV file
-        with open(DATA_FOLDER.joinpath(f"{COURSE_CODE}-Courses.csv"), "w", encoding="utf-8", newline='') as f:
-            csvwriter = DictWriter(f, fieldnames=["title", "details", "description", "link"])
-            csvwriter.writeheader()
-            csvwriter.writerows(data)
-        print(f"Data successfully written to {COURSE_CODE}-Courses.csv")
-    except Exception as e:
-        print(f"An error occurred while writing the file: {e}")
+    # Check if data is not empty
+    if not data:
+        print("No data to write!")
+    else:
+        try:
+            # Writing to the CSV file
+            with open(DATA_FOLDER.joinpath(f"{COURSE_CODE}-Courses.csv"), "w", encoding="utf-8", newline='') as f:
+                csvwriter = DictWriter(
+                    f, fieldnames=["title", "details", "description", "link"])
+                csvwriter.writeheader()
+                csvwriter.writerows(data)
+            print(f"Data successfully written to {COURSE_CODE}-Courses.csv")
+        except Exception as e:
+            print(f"An error occurred while writing the file: {e}")
+
+
+# Call main if script is run directly
+if __name__ == "__main__":
+    main()
