@@ -58,7 +58,7 @@ class GenerateLearningPathIndexEmbeddings:
         try:
             self.openai_embeddings = OpenAIEmbeddings(
                 openai_api_key=self.openai_api_key, request_timeout=60)
-        except openai.error.Timeout as e:
+        except openai.Timeout as e:
             print(f"Timeout error encountered: {e}")
             raise  # Propagate the exception so it can be retried
         
