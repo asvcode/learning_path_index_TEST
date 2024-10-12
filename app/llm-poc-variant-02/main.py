@@ -12,11 +12,9 @@ from langchain.llms import OpenAI
 from langchain.vectorstores import FAISS
 from langchain.prompts import PromptTemplate
 
-from tenacity import retry, stop_after_attempt, wait_fixed
-
 from interface import app
 import streamlit as st
-# Define GenerateLearningPathIndexEmbeddings class: 
+# Define GenerateLearningPathIndexEmbeddings class:
 #  - Load .csv file
 #  - Chunk text
 #    - Chunk size = 1000 characters
@@ -24,6 +22,8 @@ import streamlit as st
 #  - Create FAISS vector store from chunked text and OpenAI embeddings
 #  - Get FAISS vector store
 # This class is used to generate the FAISS vector store from the .csv file.
+
+
 class GenerateLearningPathIndexEmbeddings:
     def __init__(self, csv_filename):
         load_dotenv()  # Load .env file
@@ -39,47 +39,37 @@ class GenerateLearningPathIndexEmbeddings:
         self.load_csv_data()
         self.get_openai_embeddings()
         self.create_faiss_vectorstore_with_csv_data_and_openai_embeddings()
-           
+
     def load_csv_data(self):
         # Load your dataset (e.g., CSV, JSON, etc.)
         print(' -- Started loading .csv file for chunking purposes.')
         loader = TextLoader(self.data_path)
         document = loader.load()
-        text_splitter = CharacterTextSplitter(chunk_size=1000, chunk_overlap=30, separator="\n")
+        text_splitter = CharacterTextSplitter(
+            chunk_size=1000, chunk_overlap=30, separator="\n")
         self.our_custom_data = text_splitter.split_documents(document)
-        print(f' -- Finished spitting (i.e. chunking) text (i.e. documents) from the .csv file (i.e. {self.data_path}).')
-        
-    def get_openai_embeddings(self):
-        self.openai_embeddings = OpenAIEmbeddings(openai_api_key=self.openai_api_key, request_timeout=60)
+        print(
+            f' -- Finished spitting (i.e. chunking) text (i.e. documents) from the .csv file (i.e. {self.data_path}).')
 
-    # Retry up to 3 times with a 2-second wait between attempts
-    # Retry up to 3 times with a 2-second wait between attempts
-    # Retry up to 3 times with a 2-second wait between attempts
-    #@retry(stop=stop_after_attempt(3), wait=wait_fixed(2))
-    #def get_openai_embeddings(self):
-    #    try:
-    #        self.openai_embeddings = OpenAIEmbeddings(
-    #            openai_api_key=self.openai_api_key, request_timeout=60)
-   #     except Timeout as e:  # Correct OpenAI Timeout handling
-   #         print(f"Timeout error encountered: {e}")
-   #         raise  # Propagate the exception so it can be retried
-   #     except APIError as e:  # Correct OpenAI API error handling
-   #         print(f"API error encountered: {e}")
-   #         raise
-   #     except RateLimitError as e:  # Correct rate limit error handling
-   #         print(f"Rate limit error encountered: {e}")
-   #         raise
-        
+    def get_openai_embeddings(self):
+        self.openai_embeddings = OpenAIEmbeddings(
+            openai_api_key=self.openai_api_key, request_timeout=60)
+
     def create_faiss_vectorstore_with_csv_data_and_openai_embeddings(self):
         faiss_vectorstore_foldername = "faiss_learning_path_index"
         if not os.path.exists(faiss_vectorstore_foldername):
-            print(' -- Creating a new FAISS vector store from chunked text and OpenAI embeddings.')
-            vectorstore = FAISS.from_documents(self.our_custom_data, self.openai_embeddings)
+            print(
+                ' -- Creating a new FAISS vector store from chunked text and OpenAI embeddings.')
+            vectorstore = FAISS.from_documents(
+                self.our_custom_data, self.openai_embeddings)
             vectorstore.save_local(faiss_vectorstore_foldername)
-            print(f' -- Saved the newly created FAISS vector store at "{faiss_vectorstore_foldername}".')
+            print(
+                f' -- Saved the newly created FAISS vector store at "{faiss_vectorstore_foldername}".')
         else:
-            print(f' -- WARNING: Found existing FAISS vector store at "{faiss_vectorstore_foldername}", loading from cache.')
-            print(f' -- NOTE: Delete the FAISS vector store at "{faiss_vectorstore_foldername}", if you wish to regenerate it from scratch for the next run.')
+            print(
+                f' -- WARNING: Found existing FAISS vector store at "{faiss_vectorstore_foldername}", loading from cache.')
+            print(
+                f' -- NOTE: Delete the FAISS vector store at "{faiss_vectorstore_foldername}", if you wish to regenerate it from scratch for the next run.')
         self.faiss_vectorstore = FAISS.load_local(
             "faiss_learning_path_index", self.openai_embeddings
         )
@@ -136,40 +126,48 @@ class GenAILearningPathIndex:
                 {context}
                 Question: {question}
             """
-        PROMPT = PromptTemplate(template=prompt_template, input_variables=["context","question"])
+        PROMPT = PromptTemplate(template=prompt_template, input_variables=[
+                                "context", "question"])
         # The chain_type_kwargs are passed to the chain_type when it is created.
         self.chain_type_kwargs = {"prompt": PROMPT}
-        # Create the GenAI project 
-        #self.llm = OpenAI(temperature=1.0, openai_api_key=self.openai_api_key)
-        self.llm = OpenAI(model="davinci-002", temperature=1.0,
-                          openai_api_key=self.openai_api_key)
+        # Create the GenAI project
+        self.llm = OpenAI(temperature=1.0, openai_api_key=self.openai_api_key)
     # Get response for query
-    # The response is returned as a string.   
-       
+    # The response is returned as a string.
+
     def get_response_for(self, query: str):
         qa = RetrievalQA.from_chain_type(
-            llm=self.llm, chain_type="stuff", 
+            llm=self.llm, chain_type="stuff",
             retriever=self.faiss_vectorstore.as_retriever(),
             chain_type_kwargs=self.chain_type_kwargs
         )
         return qa.run(query)
 
-def get_formatted_time(current_time = time.time()):
+
+def get_formatted_time(current_time=time.time()):
     return datetime.utcfromtimestamp(current_time).strftime('%Y-%m-%d %H:%M:%S')
 
 #   Load the model
+
+
 @st.cache_data
 def load_model():
     start_time = time.time()
-    print(f"\nStarted loading custom embeddings (created from .csv file) at {get_formatted_time(start_time)}")
-    learningPathIndexEmbeddings = GenerateLearningPathIndexEmbeddings("Learning_Pathway_Index.csv")
+    print(
+        f"\nStarted loading custom embeddings (created from .csv file) at {get_formatted_time(start_time)}")
+    learningPathIndexEmbeddings = GenerateLearningPathIndexEmbeddings(
+        "Learning_Pathway_Index.csv")
     faiss_vectorstore = learningPathIndexEmbeddings.get_faiss_vector_store()
     end_time = time.time()
-    print(f"Finished loading custom embeddings (created from .csv file) at {get_formatted_time(end_time)}")
-    print(f"Custom embeddings (created from .csv file) took about {end_time - start_time} seconds to load.")
+    print(
+        f"Finished loading custom embeddings (created from .csv file) at {get_formatted_time(end_time)}")
+    print(
+        f"Custom embeddings (created from .csv file) took about {end_time - start_time} seconds to load.")
     return faiss_vectorstore
 
 #  Query the model
+
+
 def query_gpt_model(query: str):
     start_time = time.time()
     print(f"\nQuery processing start time: {get_formatted_time(start_time)}")
@@ -181,7 +179,7 @@ def query_gpt_model(query: str):
     return answer
 
 
-if __name__=='__main__':
+if __name__ == '__main__':
     faiss_vectorstore = load_model()
 
     if running_inside_streamlit():
