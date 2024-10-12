@@ -13,7 +13,7 @@ from langchain.vectorstores import FAISS
 from langchain.prompts import PromptTemplate
 
 from tenacity import retry, stop_after_attempt, wait_fixed
-from openai.error import Timeout, APIError, RateLimitError
+from openai import Timeout, APIError, RateLimitError  # Corrected import
 
 from interface import app
 import streamlit as st
@@ -55,18 +55,19 @@ class GenerateLearningPathIndexEmbeddings:
 
     # Retry up to 3 times with a 2-second wait between attempts
     # Retry up to 3 times with a 2-second wait between attempts
+    # Retry up to 3 times with a 2-second wait between attempts
     @retry(stop=stop_after_attempt(3), wait=wait_fixed(2))
     def get_openai_embeddings(self):
         try:
             self.openai_embeddings = OpenAIEmbeddings(
                 openai_api_key=self.openai_api_key, request_timeout=60)
-        except Timeout as e:  # Catching OpenAI Timeout error directly
+        except Timeout as e:  # Correct OpenAI Timeout handling
             print(f"Timeout error encountered: {e}")
             raise  # Propagate the exception so it can be retried
-        except APIError as e:  # Catching general API errors
+        except APIError as e:  # Correct OpenAI API error handling
             print(f"API error encountered: {e}")
             raise
-        except RateLimitError as e:  # Catching rate limit errors
+        except RateLimitError as e:  # Correct rate limit error handling
             print(f"Rate limit error encountered: {e}")
             raise
         
