@@ -12,6 +12,8 @@ from langchain.llms import OpenAI
 from langchain.vectorstores import FAISS
 from langchain.prompts import PromptTemplate
 
+from tenacity import retry, stop_after_attempt, wait_fixed
+
 from interface import app
 import streamlit as st
 # Define GenerateLearningPathIndexEmbeddings class: 
