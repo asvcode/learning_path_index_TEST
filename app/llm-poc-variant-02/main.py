@@ -47,8 +47,18 @@ class GenerateLearningPathIndexEmbeddings:
         self.our_custom_data = text_splitter.split_documents(document)
         print(f' -- Finished spitting (i.e. chunking) text (i.e. documents) from the .csv file (i.e. {self.data_path}).')
         
+    #def get_openai_embeddings(self):
+    #    self.openai_embeddings = OpenAIEmbeddings(openai_api_key=self.openai_api_key, request_timeout=60)
+
+    # Retry up to 3 times with a 2-second wait between attempts
+    @retry(stop=stop_after_attempt(3), wait=wait_fixed(2))
     def get_openai_embeddings(self):
-        self.openai_embeddings = OpenAIEmbeddings(openai_api_key=self.openai_api_key, request_timeout=60)
+        try:
+            self.openai_embeddings = OpenAIEmbeddings(
+                openai_api_key=self.openai_api_key, request_timeout=60)
+        except openai.error.Timeout as e:
+            print(f"Timeout error encountered: {e}")
+            raise  # Propagate the exception so it can be retried
         
     def create_faiss_vectorstore_with_csv_data_and_openai_embeddings(self):
         faiss_vectorstore_foldername = "faiss_learning_path_index"
