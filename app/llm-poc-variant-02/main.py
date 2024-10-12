@@ -140,7 +140,9 @@ class GenAILearningPathIndex:
         # The chain_type_kwargs are passed to the chain_type when it is created.
         self.chain_type_kwargs = {"prompt": PROMPT}
         # Create the GenAI project 
-        self.llm = OpenAI(temperature=1.0, openai_api_key=self.openai_api_key)
+        #self.llm = OpenAI(temperature=1.0, openai_api_key=self.openai_api_key)
+        self.llm = OpenAI(model="gpt-3.5-turbo", temperature=1.0,
+                          openai_api_key=self.openai_api_key)
     # Get response for query
     # The response is returned as a string.   
        
