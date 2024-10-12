@@ -58,9 +58,12 @@ class GenerateLearningPathIndexEmbeddings:
         try:
             self.openai_embeddings = OpenAIEmbeddings(
                 openai_api_key=self.openai_api_key, request_timeout=60)
-        except openai.Timeout as e:
+        except openai.Timeout as e:  # Correcting the incorrect reference
             print(f"Timeout error encountered: {e}")
             raise  # Propagate the exception so it can be retried
+        except openai.error.APIError as e:
+            print(f"API error encountered: {e}")
+            raise
         
     def create_faiss_vectorstore_with_csv_data_and_openai_embeddings(self):
         faiss_vectorstore_foldername = "faiss_learning_path_index"
