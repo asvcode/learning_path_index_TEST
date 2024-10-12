@@ -13,6 +13,7 @@ from langchain.vectorstores import FAISS
 from langchain.prompts import PromptTemplate
 
 from tenacity import retry, stop_after_attempt, wait_fixed
+from openai.error import Timeout, APIError, RateLimitError
 
 from interface import app
 import streamlit as st
@@ -53,16 +54,20 @@ class GenerateLearningPathIndexEmbeddings:
     #    self.openai_embeddings = OpenAIEmbeddings(openai_api_key=self.openai_api_key, request_timeout=60)
 
     # Retry up to 3 times with a 2-second wait between attempts
+    # Retry up to 3 times with a 2-second wait between attempts
     @retry(stop=stop_after_attempt(3), wait=wait_fixed(2))
     def get_openai_embeddings(self):
         try:
             self.openai_embeddings = OpenAIEmbeddings(
                 openai_api_key=self.openai_api_key, request_timeout=60)
-        except openai.Timeout as e:  # Correcting the incorrect reference
+        except Timeout as e:  # Catching OpenAI Timeout error directly
             print(f"Timeout error encountered: {e}")
             raise  # Propagate the exception so it can be retried
-        except openai.error.APIError as e:
+        except APIError as e:  # Catching general API errors
             print(f"API error encountered: {e}")
+            raise
+        except RateLimitError as e:  # Catching rate limit errors
+            print(f"Rate limit error encountered: {e}")
             raise
         
     def create_faiss_vectorstore_with_csv_data_and_openai_embeddings(self):
