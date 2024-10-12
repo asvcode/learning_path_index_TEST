@@ -81,7 +81,7 @@ class GenerateLearningPathIndexEmbeddings:
             print(f' -- WARNING: Found existing FAISS vector store at "{faiss_vectorstore_foldername}", loading from cache.')
             print(f' -- NOTE: Delete the FAISS vector store at "{faiss_vectorstore_foldername}", if you wish to regenerate it from scratch for the next run.')
         self.faiss_vectorstore = FAISS.load_local(
-            "faiss_learning_path_index", self.openai_embeddings, allow_dangerous_deserialization=True
+            "faiss_learning_path_index", self.openai_embeddings
         )
 
     def get_faiss_vector_store(self):
