@@ -179,7 +179,13 @@ def query_gpt_model(query: str):
     return answer
 
 
+def run_model():
+    st.title("Hello World!")
+    st.write("This is a test to see if Streamlit is working.")
+
+
 if __name__ == '__main__':
+    run_model()
     faiss_vectorstore = load_model()
 
     if running_inside_streamlit():
